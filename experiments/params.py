@@ -28,7 +28,6 @@ def get_params():
 
 
     args.add_argument("-seed", "--seed", default=None, type=int)
-
     args.add_argument("-metric", "--metric", default="Acc", choices=["Acc"])
 
     # Training-specific params
@@ -40,7 +39,7 @@ def get_params():
     args.add_argument("-prt_step", "--print_step", default=2000, type=int)
     args.add_argument("-eval_step", "--eval_step", default=2000, type=int)
     args.add_argument("-ckpt_step", "--checkpoint_step", default=2000, type=int)
-    args.add_argument("-bs", "--batch_size", default=5, type=int) 
+    args.add_argument("-bs", "--batch_size", default=5, type=int)
     args.add_argument("-weight_decay", "--weight_decay", default=0.001, type=float)
     args.add_argument("-dropout", "--dropout", default=0, type=float)
     args.add_argument("-txt_dropout", "--text_features_dropout", default=0, type=float)  # additionally drop out text features
@@ -70,8 +69,7 @@ def get_params():
     args.add_argument("-zero_lbl", "--zero_label_embeddings", default=False, type=bool)
     args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=bool)
     args.add_argument("-linear_probe", "--linear_probe", default=False, type=bool)
-    args.add_argument("-fdf", "--fix_datasets_first", default=False,
-                      type=bool)  # Whether to convert datasets to list first (no sampling involved later).
+    args.add_argument("-fdf", "--fix_datasets_first", default=False, type=bool)  # Whether to convert datasets to list first (no sampling involved later).
     # This should generally not be used as the resulting files would be way too large
 
     args.add_argument("-no_bn_metagraph", "--no_bn_metagraph", default=False,  # no batch norm metagraph
@@ -87,8 +85,7 @@ def get_params():
     args.add_argument("-task", "--task_name", default="classification", type=str)  # the name of the pretraining task
     args.add_argument("-zeroshot", "--zero_shot", default=False, type=bool) # if True, messages will NOT be passed along the metagraph edges.
     args.add_argument("-no_split_labels", "--no_split_labels", default=True, type=bool) # split train/val/test with original dataset split
-    args.add_argument("-all_test", "--all_test", default=False,
-                      type=bool)  # Set train/test/val labels to the same label set (for testing purposes)
+    args.add_argument("-all_test", "--all_test", default=False, type=bool)  # Set train/test/val labels to the same label set (for testing purposes)
     args.add_argument("-train_cap", "--train_cap", default=None, type=int) # split train/val/test with original dataset split
     args.add_argument('--label_set', type=str, nargs='+')
     args.add_argument("-csr_split", "--csr_split", default=False, type=bool)  # Whether to use CSR split...
@@ -100,7 +97,7 @@ def get_params():
     args.add_argument("-way_u", "--n_way_upper", default=-1, type=int) # If defined, will set the upper bound for n_way
     args.add_argument("-shot_u", "--n_shots_upper", default=-1, type=int) # If defined, will set the upper bound for n_shots
     args.add_argument("-qry_u", "--n_query_upper", default=-1, type=int) # If defined, will set the upper bound for n_query
-    args.add_argument("-max_length", default=-1, type=int) 
+    args.add_argument("-max_length", default=-1, type=int)
 
     ### data augmentation parameters ###
     args.add_argument("-aug", "--augmentation", default="", type=str)
@@ -121,9 +118,7 @@ def get_params():
     args.add_argument("-pretrained", "--pretrained_model_run", default="", type=str)
     #  Name of WanDB run to pull the best model from.
 
-    args.add_argument("-smalldataset", "--small_dataset", default=False,
-                      type=bool)  # use for debugging  - very small dataset
-
+    args.add_argument("-smalldataset", "--small_dataset", default=False, type=bool)  # use for debugging - very small dataset
     args.add_argument("-exptype", "--experiment_type", default="metagraph")
 
 
@@ -137,6 +132,7 @@ def get_params():
         params["device"] = torch.device('cpu')
     else:
         params['device'] = torch.device('cuda:' + str(args.device))
+
     if params["timestamp"] is None:
         params["timestamp"] = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     params["exp_name"] = params["prefix"] + "_" + params["timestamp"]

@@ -13,10 +13,11 @@ from .dataset import SubgraphDataset
 from .dataloader import NeighborTask, MultiTaskSplitWay, MultiTaskSplitBatch, MulticlassTask, ParamSampler, BatchSampler, Collator, ContrastiveTask
 from .augment import get_aug
 
+
 class MAG240MSubgraphDataset(SubgraphDataset):
     def get_subgraph(self, *args, **kwargs):
-        graph = super().get_subgraph(*args, **kwargs)
-        graph.x = graph.x.float()  # it was half
+        graph = super().get_subgraph(*args, **kwargs) # calls get_subgraph() method of parent class SubgraphDataset
+        graph.x = graph.x.float()  # it was half precision - 16-bit binary floating-point
         return graph
 
 
@@ -43,6 +44,7 @@ def get_mag240m_dataset(root, n_hop=2, **kwargs):
         print(f"Loading MAG240M dataset takes {time.time() - t:.2f} seconds")
         if do_load:
             torch.save(data, os.path.join(root, "mag240m_fts_adj_label.pt"))
+
     print("Done loading MAG240M dataset.")
     graph_ns = None if adj_bi_cached else Data(edge_index=edge_index, num_nodes=num_paper)
     neighbor_sampler = NeighborSamplerCacheAdj(os.path.join(root, "mag240m_adj_bi.pt"), graph_ns, n_hop)
@@ -66,6 +68,7 @@ def mag240m_labels(split, node_split = "", root="dataset", remove_cs=True):
     else:
         labels = list(range(num_classes))
         additional = []
+
     generator = random.Random(42)
     generator.shuffle(labels)
 
@@ -105,6 +108,7 @@ def get_mag240m_dataloader(dataset, task_name, split, node_split, batch_size, n_
         aug = get_aug(aug, dataset.graph.x)
     else:
         aug = get_aug("")
+
     if task_name == "same_graph":
         neighbor_sampler = copy.copy(dataset.neighbor_sampler)
         neighbor_sampler.num_hops = 0
@@ -134,12 +138,13 @@ def get_mag240m_dataloader(dataset, task_name, split, node_split, batch_size, n_
             seed=seed,
         )
         label_meta = torch.zeros(1, 768).expand(num_classes, -1)
+
     # Classification and neighbor matching - multitask splitbatch
     elif task_name.startswith("cls_nm"):
         labels, label_set, num_classes = mag240m_labels(split, root=root)
         neighbor_sampler = copy.copy(dataset.neighbor_sampler)
         neighbor_sampler.num_hops = 2
-        
+
         if task_name.endswith("sb"):
             task_base = MultiTaskSplitBatch([
                 MulticlassTask(labels, label_set),
@@ -147,10 +152,10 @@ def get_mag240m_dataloader(dataset, task_name, split, node_split, batch_size, n_
             ], ["mct", "nt"], [1, 3])
         elif task_name.endswith("sw"):
             task_base = MultiTaskSplitWay([
-                MulticlassTask(labels, label_set), 
+                MulticlassTask(labels, label_set),
                 NeighborTask(neighbor_sampler, len(dataset), "inout")
             ], ["mct", "nt"], split="even")
-        
+
         sampler = BatchSampler(
             batch_count,
             task_base,

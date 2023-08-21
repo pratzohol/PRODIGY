@@ -1,9 +1,7 @@
 import sys
 import os
 
-
 sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
-
 
 from models.metaGNN import MetaGNN, MetaTransformer, MetaTransformerPytorch, MetaAverage
 from models.get_model import get_model, print_num_trainable_params
@@ -37,7 +35,9 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
             n_layer = 1
             if layer[1:].isnumeric():
                 n_layer = int(layer[1:])
-            in_dim = emb_dim
+
+            in_dim = emb_dim # hidden layer dimension
+
             if is_first_layer:
                 is_first_layer = False
                 in_dim = input_dim  # the first layer takes the input features as input
@@ -55,13 +55,15 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
                           batch_norm=batch_norm_encoder)
                 )
         elif layer[0] == "G":
-            # GraphSAGE background graph layer:
-            # e. g. S = 1-layer GraphSAGE
-            # e. g. S2 = 2-layer GraphSAGE
+            # GAT background graph layer:
+            # e. g. G = 1-layer GAT
+            # e. g. G2 = 2-layer GAT
             n_layer = 1
             if layer[1:].isnumeric():
                 n_layer = int(layer[1:])
+
             in_dim = emb_dim
+
             if is_first_layer:
                 is_first_layer = False
                 in_dim = input_dim  # the first layer takes the input features as input
@@ -83,6 +85,7 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
             n_layer = 1
             if layer[1:].isnumeric():
                 n_layer = int(layer[1:])
+
             module_list.append(
                 MetaGNN(emb_dim=emb_dim, edge_attr_dim=2, n_layers=n_layer, heads=8, dropout = dropout, has_final_back=has_final_back,
                         msg_pos_only=msg_pos_only, batch_norm=batch_norm_metagraph, gat_layer=False, use_relu=gnn_use_relu)
@@ -92,6 +95,7 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
             n_layer = 1
             if layer[1:].isnumeric():
                 n_layer = int(layer[1:])
+
             module_list.append(
                 MetaGNN(emb_dim=emb_dim, edge_attr_dim=2, n_layers=n_layer, heads=8, dropout = dropout, has_final_back=has_final_back,
                         msg_pos_only=msg_pos_only, batch_norm=batch_norm_metagraph, gat_layer=True, use_relu=gnn_use_relu)
@@ -101,16 +105,17 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
             n_layer = 1
             if layer[2:].isnumeric():
                 n_layer = int(layer[2:])
+
             module_list.append(
                 MetaGNN(emb_dim=emb_dim, edge_attr_dim=2, n_layers=n_layer, heads=8, dropout = dropout, has_final_back=has_final_back,
                         msg_pos_only=msg_pos_only, self_loops=False, batch_norm=batch_norm_metagraph, use_relu=gnn_use_relu)
-
             )
         elif layer[0] == "A":
             # meta layer
             n_layer = 1
             if layer[1:].isnumeric():
                 n_layer = int(layer[1:])
+
             module_list.append(
                 MetaAverage(emb_dim=emb_dim, edge_attr_dim=2, n_layers=n_layer, heads=8, dropout = dropout)
             )

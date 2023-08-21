@@ -23,14 +23,15 @@ class TrainerFS():
         wandb.init(project="graph-clip", name=parameter["exp_name"])
         #wandb.run.log_code(".")
         wandb.run.summary["wandb_url"] = wandb.run.url
+
         print("---------Parameters---------")
         for k, v in parameter.items():
             print(k + ': ' + str(v))
         print("----------------------------")
+
         wandb.config.trainer_fs = True
 
         self.parameter = parameter
-
         self.ignore_label_embeddings = parameter['ignore_label_embeddings']
         self.is_zero_shot = parameter['zero_shot']
 
@@ -75,9 +76,8 @@ class TrainerFS():
 
         self.fix_datasets = self.parameter['fix_datasets_first']
 
-
         initial_label_mlp = torch.nn.Linear(bert_dim, self.emb_dim)
-                                              
+
         edge_attr_dim = None
         if self.dataset_name in ["NELL", "ConceptNet", "FB15K-237", "Wiki", "WikiKG90M"]:
             edge_attr_dim = bert_dim
@@ -156,6 +156,7 @@ class TrainerFS():
         self.state_dir = os.path.join(self.parameter['state_dir'], self.parameter['exp_name'])
         if not os.path.isdir(self.state_dir):
             os.makedirs(self.state_dir)
+
         # Symlink to latest checkpoint
         self.wandb_fdir = os.path.join(self.state_dir, 'files')
         if not os.path.isdir(self.wandb_fdir):
@@ -208,6 +209,7 @@ class TrainerFS():
         kwargs["split_labels"] = not self.parameter["no_split_labels"]
         kwargs["train_cap"] = self.parameter["train_cap"]
         kwargs['linear_probe'] = self.parameter['linear_probe']
+
         if self.parameter["all_test"]:
             kwargs["all_test"] = True
         if self.parameter["label_set"]:
@@ -215,6 +217,7 @@ class TrainerFS():
             print("Label set:", kwargs["label_set"])
         if self.parameter["csr_split"]:
             kwargs["csr_split"] = self.parameter["csr_split"]
+
         if dataset_name == "arxiv":
             from data.arxiv import get_arxiv_dataloader
             get_dataloader = get_arxiv_dataloader
@@ -224,7 +227,7 @@ class TrainerFS():
         elif dataset_name in ["Wiki", "WikiKG90M"]: # "NELL", "FB15K-237", "ConceptNet",  by default still use legacy for them for now
             from data.kg import get_kg_dataloader
             get_dataloader = get_kg_dataloader
-        elif dataset_name in [ "NELL", "FB15K-237", "ConceptNet"]: 
+        elif dataset_name in [ "NELL", "FB15K-237", "ConceptNet"]:
             assert self.parameter["task_name"] != "classification"
             from data.kg import get_kg_dataloader
             get_dataloader = get_kg_dataloader
@@ -248,13 +251,14 @@ class TrainerFS():
             kwargs["n_shot"] = range(kwargs["n_shot"], self.parameter["n_shots_upper"] + 1)
         if self.parameter["n_query_upper"] > 0:
             kwargs["n_query"] = range(kwargs["n_query"], self.parameter["n_query_upper"] + 1)
+
         train_dataloader = get_dataloader(dataset, split="train", node_split=train_node_split, batch_count=self.parameter["dataset_len_cap"], **kwargs)
         return train_dataloader, train_val_dataloader, val_dataloader, test_dataloader
 
 
     def move_to_device(self, bt_response):
         return tuple([x.to(self.device) for x in bt_response])
-        
+
 
     def get_loss_and_acc(self, y_true_matrix, y_pred_matrix):
         loss = self.loss(y_pred_matrix, y_true_matrix.float())
@@ -268,19 +272,22 @@ class TrainerFS():
                 print("Not using ranking loss")
 
         return loss, accuracy(y_true_matrix, y_pred_matrix, calc_roc=not self.is_multiway)[2]
-    
+
+
     def get_hits(self, y_true_matrix, y_pred_matrix, task_mask):
         # get HITS@10, HITS@5, HITS@1, MRR scores
         tasks = task_mask.unique()
         n_tasks = len(tasks)
         yt, yp = y_true_matrix.cpu().numpy().flatten(), y_pred_matrix.cpu().numpy().flatten()
         data = {"Hits@10": 0, "Hits@5": 0, "Hits@1": 0, "MRR": 0}
+
         for i in range(n_tasks):
             where = torch.where(task_mask == tasks[i])[0].cpu()
             x = torch.tensor(yp[where])
             query_idx = np.where(yt[where] == 1)[0]
             _, idx = torch.sort(x, descending=True)
             rank = list(idx.cpu().numpy()).index(query_idx) + 1
+
             if rank <= 10:
                 data['Hits@10'] += 1
             if rank <= 5:
@@ -288,9 +295,11 @@ class TrainerFS():
             if rank == 1:
                 data['Hits@1'] += 1
             data['MRR'] += 1.0 / rank
+
         for key in data:
             data[key] = data[key] / n_tasks
         return data
+
 
     def get_aux_loss(self, graph):
         if hasattr(graph, "node_attr_mask") and self.parameter["attr_regression_weight"]:
@@ -304,9 +313,11 @@ class TrainerFS():
             return loss
         return torch.zeros(1, device=self.device)
 
+
     def save_checkpoint(self, step):
         state_dict = {key: value.state_dict() for key, value in self.all_saveable_modules.items()}
         torch.save(state_dict, os.path.join(self.ckpt_dir, 'state_dict_' + str(step) + '.ckpt'))
+
 
     def load_checkpoint(self, path):
         state_dict = torch.load(path, map_location=self.device)
@@ -322,11 +333,12 @@ class TrainerFS():
             shutil.copy(best_step, best_ckpt)
         else:
             print('No such best checkpoint to copy: {}'.format(best_step))
+
         print("Saved best model to {}".format(best_ckpt))
         self.best_state_dict_path = best_ckpt
 
-    def train(self):
 
+    def train(self):
         # initialization
         best_step = 0
         best_val = 0
@@ -344,7 +356,7 @@ class TrainerFS():
 
         def prefix_dict(d, prefix):
             return {prefix + key: value for key, value in d.items()}
-        
+
         with torch.no_grad():
             # self.model.eval()
             test_loss, test_acc, test_acc_std, test_aux_loss, ranks = self.do_eval(self.test_dataloader)
@@ -370,7 +382,6 @@ class TrainerFS():
 
         for e in pbar:
             self.model.train()
-
             self.optimizer.zero_grad()
 
             t1 = time.time()
@@ -380,17 +391,20 @@ class TrainerFS():
                 train_dataloader_itr = iter(self.train_dataloader)
                 batch = next(train_dataloader_itr)
             t2 = time.time()
+
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch) # apply the model
             loss, acc = self.get_loss_and_acc(yt, yp) # get loss
             aux_loss = self.get_aux_loss(graph)
             weight = self.parameter["attr_regression_weight"]
+
             total_loss = loss + aux_loss * weight
             total_loss.backward()
             self.optimizer.step()
             # self.scheduler.step()
 
             t3 = time.time()
+
             wandb.log({"step_time": t3 - t2}, step=e)
             wandb.log({"load_time": t2 - t1}, step=e)
             wandb.log({"train_loss": loss, "train_acc": acc, "train_aux_loss": aux_loss, "train_total_loss": total_loss}, step=e)  # loss and acc here are both floats
@@ -402,9 +416,10 @@ class TrainerFS():
             if e % self.print_step == 0:
                 # loss_num = loss
                 pbar.write(f"Loss: {loss.item()}")
+
             # save checkpoint on specific step
             if e % self.checkpoint_step == 0 and e != 0:
-                pbar.write('Step  {} has finished, saving...'.format(e))
+                pbar.write('Step {} has finished, saving...'.format(e))
                 self.save_checkpoint(e)
 
             if e % self.eval_step == 0 and e != 0:
@@ -426,8 +441,7 @@ class TrainerFS():
                     #     break
 
                 pbar.write(f"Validation loss {val_loss} acc {val_acc} aux_loss {val_aux_loss}")
-                wandb.log({"valid_loss": val_loss, "valid_acc": val_acc, "valid_aux_loss": val_aux_loss},
-                          step=e)
+                wandb.log({"valid_loss": val_loss, "valid_acc": val_acc, "valid_aux_loss": val_aux_loss}, step=e)
 
                 if self.train_val_dataloader is not None:
                     with torch.no_grad():
@@ -451,6 +465,7 @@ class TrainerFS():
                         test_acc_on_best_val = test_acc
                         if ranks is not None:
                             other_metrics_on_best = ranks
+
         print('Training has finished')
         print('\tBest step is {0} | {1} of valid set is {2:.3f}'.format(best_step, "accuracy", best_val))
 
@@ -458,13 +473,16 @@ class TrainerFS():
         print("Best testing accuracy is", best_test_acc)
         print("Testing accuracy on best val is", test_acc_on_best_val)
         print("Best val accuracy is", best_val)
+
         wandb.run.summary["best_step"] = best_step
         wandb.run.summary["best_test_acc"] = best_test_acc
         wandb.run.summary["test_acc_on_best_val"] = test_acc_on_best_val
         wandb.run.summary["final_validation_acc"] = best_val
+
         if other_metrics_on_best is not None:
               for key in other_metrics_on_best:
                   wandb.run.summary["final_test_" + key] = other_metrics_on_best[key]
+
         self.save_best_state_dict(best_step)
         print('Finish')
         wandb.finish()
@@ -477,17 +495,21 @@ class TrainerFS():
         ranks = None
         if self.calc_ranks:
             ranks = []
+
         ytrueall, ypredall = None, None
         all_aux_loss = []
         acc_all = []
         for batch in tqdm(dataloader, leave=False):
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch)  # apply the model
+
             if self.calc_ranks:
                 assert len(batch) == 10, "Not using the right batch structure; need to include task_mask"
+
             loss, acc = self.get_loss_and_acc(yt, yp)  # get loss
             acc_all.append(acc)
             aux_loss = self.get_aux_loss(graph)
+
             if self.calc_ranks:
                 task_mask = batch[9]
                 query_set_mask = batch[5]
@@ -502,12 +524,16 @@ class TrainerFS():
             else:
                 ytrueall = torch.cat((ytrueall, yt), dim=0)
                 ypredall = torch.cat((ypredall, yp), dim=0)
+
             all_aux_loss.append(aux_loss.item())
+
         loss_global, acc_global = self.get_loss_and_acc(ytrueall, ypredall)
         acc_batch_std = np.std(acc_all)
         aux_loss_global = sum(all_aux_loss) / len(all_aux_loss)
+
         torch.set_grad_enabled(True)
         if ranks is not None:
             ranks = {key: np.average([r[0][key] for r in ranks], weights=[r[1] for r in ranks]) for key in ranks[0][0]}
+
         return loss_global, acc_global, acc_batch_std, aux_loss_global, ranks
 

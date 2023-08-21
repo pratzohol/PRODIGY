@@ -2,7 +2,7 @@ import numpy as np
 import random
 import torch
 
-torch.multiprocessing.set_sharing_strategy("file_system") 
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 import sys
 import os
@@ -20,7 +20,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 if __name__ == '__main__':
-    torch.set_num_threads(4)
+    torch.set_num_threads(4) # TODO : set it to 8 and try
 
     params = get_params()
     print("---------Parameters---------")
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     if params["dataset"] in ["FB15K-237", "NELL", "ConceptNet", "Wiki"]:
         print("Using KG dataset - setting language model to sentence-transformers/all-mpnet-base-v2")
         params["bert_emb_model"] = "sentence-transformers/all-mpnet-base-v2"
+
     datasets = get_dataset_wrap(
         root=params["root"],
         dataset=params["dataset"],
@@ -58,9 +59,9 @@ if __name__ == '__main__':
         rel_sample_rand_seed=params["rel_sample_random_seed"],
         calc_ranks=params["calc_ranks"],
         kg_emb_model=params["kg_emb_model"] if params["kg_emb_model"] != "" else None,
-        task_name = params["task_name"],
+        task_name=params["task_name"],
         shuffle_index=params["shuffle_index"],
-        node_graph = params["task_name"] == "sn_neighbor_matching"
+        node_graph=(params["task_name"] == "sn_neighbor_matching")
     )
 
     trnr = TrainerFS(datasets,  params)

@@ -17,12 +17,14 @@ class SimpleDotProdModel(torch.nn.Module):
         if params is not None:
             self.params = params
 
+
     def decode(self, input_x, label_x, metagraph_edge_index, edgelist_bipartite=False):
         if edgelist_bipartite:
             ind0 = metagraph_edge_index[0, :]
             ind1 = metagraph_edge_index[1, :]
             decoded_logits = (self.cos(input_x[ind0], label_x[ind1]) + 1) / 2
             return decoded_logits
+
         # strip last 2 features from input_x if necessary
         if input_x.shape[1] > label_x.shape[1]:
             input_x = input_x[:, :-2]
@@ -32,6 +34,7 @@ class SimpleDotProdModel(torch.nn.Module):
         ind1 = metagraph_edge_index[1, :]
         decoded_logits = self.cos(x[ind0], x[ind1]) * self.logit_scale.exp()
         return decoded_logits
+
 
     def forward(self, graph, x_label, y_true_matrix, metagraph_edge_index, metagraph_edge_attr, query_set_mask, input_seqs=None, query_seqs=None, query_seqs_gt=None, task_mask=None):
         '''

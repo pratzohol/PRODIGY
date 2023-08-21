@@ -1,11 +1,9 @@
 '''
-
 Classes to mark different components of the model. Used to tell the code what arguments to pass to a function
 and what to do with the output of a function.
-The idea is that we could then stack different layer¸s together in a simple list.
+The idea is that we could then stack different layers together in a simple list.
 (e. g. GAT+GAT+SupernodeAggr+Metagraph+SupernodeToBgGraph+GAT+GAT+SupernodeAggr+Metagraph or any other combination
 - to see what order works best)
-
 '''
 
 

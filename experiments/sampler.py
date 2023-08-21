@@ -53,6 +53,7 @@ def sample_k_hop_subgraph(
         adjs.append(adj.coo())
         if node_idx.size(0) >= limit:
             break
+
     row = torch.cat([adj[0] for adj in adjs])
     col = torch.cat([adj[1] for adj in adjs])
     e_id = torch.cat([adj[2] for adj in adjs])
@@ -70,7 +71,7 @@ def sample_k_hop_subgraph(
     edge_index = torch.stack([row, col], dim=0)
 
     node_count = node_idx.size(0)
-    edge_index, e_id = coalesce(edge_index, e_id, node_count, node_count, "min")
+    edge_index, e_id = coalesce(edge_index, e_id, node_count, node_count, "min") # reduce information associated with multiple edges between the same pair of nodes to the minimum value.
 
     return node_idx, edge_index, e_id
 
@@ -97,7 +98,7 @@ class NeighborSampler:
             size=self.size,
             limit=self.limit,
         )
-    
+
     def sample_edge(
         self,
         node_idx: Tensor,
@@ -154,6 +155,7 @@ class NeighborSamplerCacheAdj(NeighborSampler):
         self.num_hops = num_hops
         self.size = size
         self.limit = limit
+
         if os.path.exists(cache_path):
             print(f"Loading adjacent matrix for neighbor sampling from {cache_path}")
             self.whole_adj = torch.load(cache_path)
@@ -164,6 +166,7 @@ class NeighborSamplerCacheAdj(NeighborSampler):
             print(f"Saving adjacent matrix for neighbor sampling to {cache_path}")
             torch.save(self.whole_adj, cache_path)
             print(f"Saved adjacent matrix for neighbor sampling to {cache_path}")
+
         self.whole_adj.share_memory_()
 
 

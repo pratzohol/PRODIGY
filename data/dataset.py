@@ -116,10 +116,10 @@ class KGSubgraphDataset(Dataset):
             self.pyg_graph.edge_attr_feat = torch.stack([kg_dataset.text_feats[i] for i in edge_attr_text], dim=0)
             self.label_embeddings = torch.stack([kg_dataset.text_feats[i] for i in label_text], dim=0)
             self.label_text = label_text
-            
+
         self.node_attrs = [key for key, value in self.pyg_graph if self.pyg_graph.is_node_attr(key)]
         self.edge_attrs = [key for key, value in self.pyg_graph if self.pyg_graph.is_edge_attr(key) and key != "edge_index"]
-  
+
 
     def sample_subgraph_around_node(self, node_idx_list):
         match = (self.pyg_graph.edge_index.unsqueeze(0) == node_idx_list.unsqueeze(1).unsqueeze(1)).any(1)
@@ -162,7 +162,7 @@ class KGSubgraphDataset(Dataset):
         data.edge_index_from_supernode = torch.tensor([[supernode_idx], [0]], dtype=int)
         data.num_nodes += 1
 
-    def get_subgraph(self, edge_idx): 
+    def get_subgraph(self, edge_idx):
         rev = False
         if edge_idx < 0:
             edge_idx = - edge_idx - 1
@@ -192,8 +192,8 @@ class KGSubgraphDataset(Dataset):
         if "edge_attr_feat" in data:
             data["edge_attr"] = data["edge_attr_feat"]
             del data["edge_attr_feat"]
-        
-        
+
+
         graph = Data(**data)
 
         return graph
@@ -241,4 +241,4 @@ class KGSubgraphDataset(Dataset):
         return graph
 
     def __len__(self):
-        return self.pyg_graph.edge_index.shape[1] 
+        return self.pyg_graph.edge_index.shape[1]

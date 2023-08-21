@@ -159,5 +159,3 @@ class BgGraphToSupernodeGlobalPropagator(torch.nn.Module, SupernodeAggrLayer):
         :param supernode_idx: Idx of the supernodes in the graph
         :return:
         '''
-        ## TODO.
-

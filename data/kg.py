@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 import joblib
 from data.load_kg_dataset import SubgraphFewshotDatasetWithTextFeats
+from data.mag240m import get_mag240m_dataset, get_mag240m_dataloader
 from .dataset import KGSubgraphDataset
 from .dataloader import KGNeighborTask, MulticlassTask, ParamSampler, BatchSampler, KGCollator, ContrastiveTask, NeighborTask, Collator, MultiTaskSplitBatch, MultiTaskSplitWay
 from .augment import get_aug
@@ -32,7 +33,7 @@ def get_csr_split(root, name):
 
 
 def get_kg_dataset(root, name, n_hop=2, bert=None, bert_device="cpu", **kwargs):
-    assert name in ["NELL", "FB15K-237", "ConceptNet", "Wiki", "WikiKG90M"]  
+    assert name in ["NELL", "FB15K-237", "ConceptNet", "Wiki", "WikiKG90M"]
 
     kind = "union"
     sampler_type = "new"
@@ -46,7 +47,8 @@ def get_kg_dataset(root, name, n_hop=2, bert=None, bert_device="cpu", **kwargs):
         hop = 1
     if name == "FB15K-237":
         hop = 1
-    pretrained_embeddings = None 
+
+    pretrained_embeddings = None
     dataset = SubgraphFewshotDatasetWithTextFeats(root=root, dataset=name, mode=subset, hop=hop, kind = kind, shot=shot, preprocess=False,
                      bert=bert, device=bert_device, embeddings_model=pretrained_embeddings, graph_only = True)
 
@@ -223,7 +225,7 @@ def get_kg_dataloader(dataset, task_name, split, node_split, batch_size, n_way, 
             task = MulticlassTask(labels, label_set_split_lbls, train_label=None, linear_probe=linear_probe)
         else:
             assert label_set is not None, "label_set must be provided for no_split_labels"
-            task = kg_task_no_labels_split(labels, dataset=dataset, train_cap=train_cap, split=split, label_set=label_set, linear_probe=linear_probe) 
+            task = kg_task_no_labels_split(labels, dataset=dataset, train_cap=train_cap, split=split, label_set=label_set, linear_probe=linear_probe)
         sampler = BatchSampler(
             batch_count,
             task,
