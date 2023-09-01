@@ -31,7 +31,6 @@ def print_num_trainable_params(torch_module):
 def get_model(emb_dim=128, bert_dim=768, n_layer=1, input_dim=768, edge_attr_dim=4, classification_only=False,
               gnn_type="gin", add_to_dim_in=None, dropout = 0, reset_after_layer = None, batch_norm=True):
 
-    # ? DOUBT : 35 - 44
     add_to_dim = 0  # add 1 to input dim because we add supernode feature at the beginning!
 
     GNNConv = gnn_models[gnn_type]

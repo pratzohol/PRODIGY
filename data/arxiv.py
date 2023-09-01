@@ -28,17 +28,21 @@ def get_arxiv_dataset(root, n_hop=2, bert=None, bert_device="cpu", **kwargs):
     return SubgraphDataset(graph, neighbor_sampler)
 
 
-def arxiv_task(split, node_split="", split_labels=True, train_cap = 3, label_set = range(40), linear_probe=False, ogb_root="dataset"):
+def arxiv_task(split, node_split="", split_labels=True, train_cap = 3, label_set = range(40), linear_probe=False, ogb_root="F:/Datasets"):
     assert not node_split or split_labels
 
     dataset = PygNodePropPredDataset("ogbn-arxiv", root=ogb_root)
     graph = dataset[0]
     label = graph.y.squeeze(1).numpy().copy()
+
     if not split_labels:
         train_label = graph.y.squeeze(1).numpy().copy()
         split_idx = dataset.get_idx_split()["train"].numpy()
+
+        # train_label[split_idx] will remain same as original, else will be flipped
         train_label[split_idx] = -1 - train_label[split_idx]
         train_label = -1 - train_label
+
         # label_set = [0,1,2]
         # label_set = [10, 11, 14]
         COUNT_CAP = train_cap
@@ -49,7 +53,7 @@ def arxiv_task(split, node_split="", split_labels=True, train_cap = 3, label_set
                 if idx.sum() > COUNT_CAP:
                     disabled_idx = np.where(idx)[0][COUNT_CAP:]
                     train_label[disabled_idx] = -1 - i
-        if split == "train": 
+        if split == "train":
             label = train_label
             train_label = None
         else:
@@ -62,7 +66,7 @@ def arxiv_task(split, node_split="", split_labels=True, train_cap = 3, label_set
             split_idx = dataset.get_idx_split()[split if split != "val" else "valid"].numpy()
             label[split_idx] = -1 - label[split_idx]
             label = -1 - label
-        
+
     else:
         # Meta learning setting
 
@@ -75,7 +79,7 @@ def arxiv_task(split, node_split="", split_labels=True, train_cap = 3, label_set
         # TRAIN_LABELS = [32, 34, 3, 35, 38, 39, 10, 13, 16, 17, 18, 21, 23, 26, 27]
         # VAL_LABELS = [8, 12, 9, 1, 33]
         # TEST_LABELS = [28, 7, 0, 5, 2, 36, 6, 22, 15, 37, 30, 25, 29, 11, 20, 19, 31, 24, 14, 4]
-        
+
         train_label = None
         if split == "train":
             label_set = set(TRAIN_LABELS)
@@ -91,33 +95,37 @@ def arxiv_task(split, node_split="", split_labels=True, train_cap = 3, label_set
 
 def get_arxiv_dataloader(dataset, split, node_split, batch_size, n_way, n_shot, n_query, batch_count, root, bert, num_workers, aug, aug_test, split_labels, train_cap, linear_probe, label_set = range(40), **kwargs):
     mapping_file = os.path.join(root, "ogbn_arxiv", "mapping", "labelidx2arxivcategeory.csv.gz")
-    arxiv_categ_vals = pd.merge(pd.read_csv(mapping_file), arxiv_cs_taxonomy, left_on="arxiv category",
-                                                                right_on="id")
+
+    # id = arxiv cs ai (e.g.) , arxiv category column in left df is the same as id column in right df (used for merging)
+    arxiv_categ_vals = pd.merge(pd.read_csv(mapping_file), arxiv_cs_taxonomy, left_on="arxiv category", right_on="id")
     arxiv_categ_vals = list(arxiv_categ_vals["name"].values)
+
+    # Embedding for each arxiv category
     label_embeddings = bert.get_sentence_embeddings(arxiv_categ_vals)
-    # Zeros like itself
-    # label_embeddings = torch.zeros_like(label_embeddings)
+
     sampler = BatchSampler(
         batch_count,
         arxiv_task(split, node_split, split_labels, train_cap, label_set, linear_probe, root),
         ParamSampler(batch_size, n_way, n_shot, n_query, 1),
         seed=42,
     )
+
     if split == "train" or aug_test:
         aug = get_aug(aug, dataset.graph.x)
     else:
         aug = get_aug("")
+
     dataloader = DataLoader(dataset, batch_sampler=sampler, num_workers=num_workers, collate_fn=Collator(label_embeddings, aug=aug))
     return dataloader
 
-
+# download .tsv file from "https://snap.stanford.edu/ogb/data/misc/ogbn_arxiv/titleabs.tsv" and place it under ogbn_arxiv folder
 def preprocess_arxiv_text_bert(root, model_name, device):
     print("Preprocessing text features")
     dataset = PygNodePropPredDataset("ogbn-arxiv", root=root)
     graph = dataset[0]
 
     nodeidx2paperid = pd.read_csv(os.path.join(root, 'ogbn_arxiv', 'mapping', 'nodeidx2paperid.csv.gz'), index_col='node idx')
-    titleabs_url = "https://snap.stanford.edu/ogb/data/misc/ogbn_arxiv/titleabs.tsv"
+    titleabs_url = os.path.join(root, "ogbn_arxiv/titleabs.tsv")  # "https://snap.stanford.edu/ogb/data/misc/ogbn_arxiv/titleabs.tsv"
     titleabs = pd.read_csv(titleabs_url, sep='\t', names=['paper id', 'title', 'abstract'], index_col='paper id')
     titleabs = nodeidx2paperid.join(titleabs, on='paper id')
 

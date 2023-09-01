@@ -32,30 +32,32 @@ class TrainerFS():
         wandb.config.trainer_fs = True
 
         self.parameter = parameter
-        self.ignore_label_embeddings = parameter['ignore_label_embeddings']
-        self.is_zero_shot = parameter['zero_shot']
+        self.ignore_label_embeddings = parameter['ignore_label_embeddings'] # True by default
+        self.is_zero_shot = parameter['zero_shot'] # False by default
 
         # parameters
         self.batch_size = parameter['batch_size']
         self.learning_rate = parameter['learning_rate']
         self.dataset_len_cap = parameter['dataset_len_cap']
-        self.invalidate_cache = parameter['invalidate_cache']
-        self.early_stopping_patience = parameter['early_stopping_patience']
+        self.invalidate_cache = parameter['invalidate_cache'] # False by default
+        self.early_stopping_patience = parameter['early_stopping_patience'] # 20 by default
 
         # step
         self.steps = parameter["epochs"] * parameter['dataset_len_cap']
+
         self.print_step = parameter['print_step']
         self.eval_step = parameter['eval_step']
         self.checkpoint_step = parameter['checkpoint_step']
 
         self.dataset_name = parameter['dataset']
-        self.classification_only = self.parameter["classification_only"]
+        self.classification_only = self.parameter["classification_only"] # only set this to true when using the very basic arxiv dataset!!! (this is basic node classification where labels are the same in train and test)
 
         self.shots = parameter['n_shots']  # k shots!
         self.ways = parameter['n_way']  # n way classification!
 
-        self.device = parameter['device']
+        self.device = parameter['device'] # 0 means cuda:0 device
 
+        # ? DOUBT : For binary classification, why self.ways is not 2 ??
         if self.ways > 1:
             self.loss = torch.nn.CrossEntropyLoss()
             self.is_multiway = True
@@ -70,13 +72,13 @@ class TrainerFS():
 
         bert_dim = 768
 
-        self.emb_dim = parameter["emb_dim"]
-        self.gnn_type = parameter["gnn_type"]
-        self.original_features = parameter["original_features"]
+        self.emb_dim = parameter["emb_dim"] # default = 256
+        self.gnn_type = parameter["gnn_type"] # default = sage
+        self.original_features = parameter["original_features"] # True for pre-training on mag240m, False in arxiv
 
-        self.fix_datasets = self.parameter['fix_datasets_first']
+        self.fix_datasets = self.parameter['fix_datasets_first'] # Default = False # Whether to convert datasets to list first (no sampling involved later)
 
-        initial_label_mlp = torch.nn.Linear(bert_dim, self.emb_dim)
+        initial_label_mlp = torch.nn.Linear(bert_dim, self.emb_dim) # Linear(in_features=768, out_features=256, bias=True)
 
         edge_attr_dim = None
         if self.dataset_name in ["NELL", "ConceptNet", "FB15K-237", "Wiki", "WikiKG90M"]:
@@ -95,27 +97,28 @@ class TrainerFS():
         if self.dataset_name in ["CSG"]:
             edge_attr_dim = 128
 
-        self.txt_dropout = torch.nn.Dropout(self.parameter["text_features_dropout"])
-        self.msg_pos_only = "meta_gnn_pos_only" in self.parameter and self.parameter["meta_gnn_pos_only"]
+        self.txt_dropout = torch.nn.Dropout(self.parameter["text_features_dropout"]) #default = 0
+        self.msg_pos_only = "meta_gnn_pos_only" in self.parameter and self.parameter["meta_gnn_pos_only"] # default = False # Whether to use only positive edges for meta graph
+
         if self.parameter["layers"] != "SimpleDotProduct":
             batch_norm_encoder = not self.parameter["no_bn_encoder"]
             batch_norm_metagraph = not self.parameter["no_bn_metagraph"]
-            layer_list = get_module_list(self.parameter["layers"], self.emb_dim, edge_attr_dim=edge_attr_dim,
-                                         input_dim=self.parameter["input_dim"], dropout=self.parameter["dropout"],
-                                         reset_after_layer = self.parameter["reset_after_layer"],
-                                         attention_mask_scheme = self.parameter["attention_mask_scheme"],
-                                         has_final_back = self.parameter["has_final_back"],
-                                         msg_pos_only=self.msg_pos_only,
-                                         batch_norm_metagraph=batch_norm_metagraph,
-                                         batch_norm_encoder=batch_norm_encoder,
-                                         gnn_use_relu = self.dataset_name in ["NELL", "ConceptNet", "FB15K-237", "Wiki", "WikiKG90M"])
+
+            layer_list = get_module_list(self.parameter["layers"], self.emb_dim, edge_attr_dim=edge_attr_dim, # edge_attr_dim = None for mag240m
+                                         input_dim=self.parameter["input_dim"], dropout=self.parameter["dropout"], # default dropout = 0  and default input_dim = 768
+                                         reset_after_layer = self.parameter["reset_after_layer"], # default = None
+                                         attention_mask_scheme = self.parameter["attention_mask_scheme"], # default = causal
+                                         has_final_back = self.parameter["has_final_back"], # default = false
+                                         msg_pos_only=self.msg_pos_only, # False by default
+                                         batch_norm_metagraph=batch_norm_metagraph, # True by default
+                                         batch_norm_encoder=batch_norm_encoder, # True by default
+                                         gnn_use_relu = self.dataset_name in ["NELL", "ConceptNet", "FB15K-237", "Wiki", "WikiKG90M"]) # False for mag240m
 
             layer_list = torch.nn.ModuleList(layer_list)
-            self.model = SingleLayerGeneralGNN(layer_list=layer_list, initial_label_mlp=initial_label_mlp,  # initial_input_mlp = initial_input_mlp,
-                                                 params=self.parameter, text_dropout=self.txt_dropout)
+            self.model = SingleLayerGeneralGNN(layer_list=layer_list, initial_label_mlp=initial_label_mlp, params=self.parameter, text_dropout=self.txt_dropout)
         else:
-            self.model = SimpleDotProdModel(layer_list=None, initial_label_mlp=initial_label_mlp,
-                                            params=self.parameter, text_dropout=self.txt_dropout)
+            self.model = SimpleDotProdModel(layer_list=None, initial_label_mlp=initial_label_mlp, params=self.parameter, text_dropout=self.txt_dropout)
+
         print(self.model)
         self.model.to(self.device)
         num_params = print_num_trainable_params(self.model)
@@ -123,9 +126,10 @@ class TrainerFS():
         wandb.run.summary["num_params"] = num_params
 
         # create a header to predict masked node attribute
-        if self.parameter["attr_regression_weight"]:
-            embed_dim = self.emb_dim
-            output_dim = self.parameter["input_dim"]
+        if self.parameter["attr_regression_weight"]: # 1000 while pre-training mag240m, default = 0
+            embed_dim = self.emb_dim # 256
+            output_dim = self.parameter["input_dim"] # 768
+
             self.aux_header = torch.nn.Sequential(
                 torch.nn.Linear(embed_dim, embed_dim),
                 torch.nn.ReLU(),
@@ -138,29 +142,29 @@ class TrainerFS():
         bert_model_name = self.parameter["bert_emb_model"]
         self.Bert = SentenceEmb(bert_model_name, device=self.device, cache_folder=os.path.join(self.parameter["root"], "sbert"))
 
+        # ? DOUBT : Visit Later ... (148 - 155)
         params = list(self.model.parameters())
-        if hasattr(self, "aux_header"):
+        if hasattr(self, "aux_header"): # Checks whether the object has the given attribute
             params += list(self.aux_header.parameters())
-        if not self.parameter["not_freeze_learned_label_embedding"]:
+        if not self.parameter["not_freeze_learned_label_embedding"]: #False by default thus, this is executed
             for param in self.model.learned_label_embedding.parameters():
                 param.requires_grad = False
 
-        self.optimizer = optim.AdamW(filter(lambda p: p.requires_grad, params),
-                                     lr=self.learning_rate, weight_decay=self.parameter["weight_decay"])
+        self.optimizer = optim.AdamW(filter(lambda p: p.requires_grad, params), lr=self.learning_rate, weight_decay=self.parameter["weight_decay"])
 
         # self.scheduler = transformers.get_linear_schedule_with_warmup(self.optimizer, 0, self.steps)
 
         wandb.config.params = parameter
         wandb.watch(self.model, log_freq=100)
 
-        self.state_dir = os.path.join(self.parameter['state_dir'], self.parameter['exp_name'])
+        self.state_dir = os.path.join(self.parameter['state_dir'], self.parameter['exp_name']) # makes directory w.r.t. pwd()
         if not os.path.isdir(self.state_dir):
             os.makedirs(self.state_dir)
 
         # Symlink to latest checkpoint
         self.wandb_fdir = os.path.join(self.state_dir, 'files')
         if not os.path.isdir(self.wandb_fdir):
-            os.symlink(wandb.run.dir, self.wandb_fdir)
+            os.symlink(wandb.run.dir, self.wandb_fdir) # symbolic link at self.wandb_fdir that points to the directory specified by wandb.run.dir
 
         self.ckpt_dir = os.path.join(self.state_dir, 'checkpoint')
         if not os.path.isdir(self.ckpt_dir):
@@ -176,7 +180,7 @@ class TrainerFS():
         if not os.path.isdir(self.logging_dir):
             os.makedirs(self.logging_dir)
         else:
-            if self.parameter["override_log"]:
+            if self.parameter["override_log"]: # default = False
                 print(f"Overwriting {self.logging_dir} logging dir!")
                 shutil.rmtree(self.logging_dir)
                 os.makedirs(self.logging_dir)
@@ -186,7 +190,7 @@ class TrainerFS():
         self.all_saveable_modules = {
             "model": self.model
         }
-        self.pretrained_model_run = self.parameter["pretrained_model_run"]
+        self.pretrained_model_run = self.parameter["pretrained_model_run"] # default = ""
         if self.pretrained_model_run != "":
             print("Reload state dict from path", self.pretrained_model_run)
             self.load_checkpoint(self.pretrained_model_run)
@@ -196,7 +200,7 @@ class TrainerFS():
 
     def _build_dataloaders(self, dataset, dataset_name):
         kwargs = {}
-        kwargs["root"] = os.path.join(self.parameter["root"], dataset_name)
+        kwargs["root"] = self.parameter["root"] # os.path.join(self.parameter["root"], dataset_name) <-- original
         kwargs["num_workers"] = self.parameter["workers"]
         kwargs["batch_size"] = self.parameter["batch_size"]
         kwargs["n_way"] = self.parameter["n_way"]
@@ -492,6 +496,7 @@ class TrainerFS():
     def do_eval(self, dataloader, eff_len=None):
         # calc_ranks: if True, it will calculate MRR, HITS scores etc.
         torch.set_grad_enabled(False)  # disable gradient calculation
+
         ranks = None
         if self.calc_ranks:
             ranks = []
@@ -499,6 +504,7 @@ class TrainerFS():
         ytrueall, ypredall = None, None
         all_aux_loss = []
         acc_all = []
+
         for batch in tqdm(dataloader, leave=False):
             batch = [i.to(self.device) for i in batch]
             yt, yp, graph = self.model(*batch)  # apply the model

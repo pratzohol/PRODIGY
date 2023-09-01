@@ -5,13 +5,13 @@ from torch_geometric.data import Data
 
 class SubgraphDataset(Dataset):
     def __init__(self, graph, neighbor_sampler, offset=0, bidirectional=True, node_graph = False):
-        self.graph = graph # torch_geometric.data.Data object of the entire graph
+        self.graph = graph # torch_geometric.data.Data object of the entire graph, this is like a dictionary in python
         self.neighbor_sampler = neighbor_sampler #  NeighborSampler object
         self.offset = offset
         self.bidirectional = bidirectional
 
-        self.node_attrs = [key for key, value in self.graph if self.graph.is_node_attr(key)]
-        self.edge_attrs = [key for key, value in self.graph if self.graph.is_edge_attr(key) and key != "edge_index"]
+        self.node_attrs = [key for key, value in self.graph if self.graph.is_node_attr(key)] # add key if it is node-level tensor attribute
+        self.edge_attrs = [key for key, value in self.graph if self.graph.is_edge_attr(key) and key != "edge_index"] # add key if it is edge-level tensor attribute
         assert not self.edge_attrs or not bidirectional
 
     def get_subgraph(self, node_idx): # refactor as __item__, add supernode in here
@@ -20,10 +20,13 @@ class SubgraphDataset(Dataset):
         data['center_node_idx'] = node_idx
         data['edge_index'] = edge_index
         data['num_nodes'] = len(node_list)
+
         for key in self.node_attrs:
             data[key] = self.graph[key][node_list]
+
         for key in self.edge_attrs:
             data[key] = self.graph[key][edge_id]
+
         if self.bidirectional:
             num_edges = edge_index.size(1)
             data['edge_index'] = torch.cat([edge_index, edge_index.flip(0)], dim=1)

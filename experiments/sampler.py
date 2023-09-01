@@ -9,14 +9,22 @@ from torch_sparse import SparseTensor, coalesce
 
 
 def preprocess(edge_index, num_nodes=None, bidirectional=True):
-    N = int(edge_index.max() + 1) if num_nodes is None else num_nodes
-    edge_attr = torch.arange(edge_index.size(1))
-    if bidirectional:
-        edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-        edge_attr = torch.cat([edge_attr, -1 - edge_attr], dim=0)
-    whole_adj = SparseTensor.from_edge_index(edge_index, edge_attr, (N, N), is_sorted=False)
+    N = int(edge_index.max() + 1) if num_nodes is None else num_nodes # N is the number of nodes
+    edge_attr = torch.arange(edge_index.size(1)) # edge_index.size(1) = number of edges
 
-    rowptr, col, value = whole_adj.csr()  # convert to csr form
+    if bidirectional:
+        # extends edge_index to 2 x (2E) by adding the reverse edges
+        edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1) # edge_index.flip(0) flips the [r1, r2]^T to [r2, r1]^T
+
+        # for undirected edges, create symmetric negative edge weights
+        edge_attr = torch.cat([edge_attr, -1 - edge_attr], dim=0) # can concat only along existing dimensions.
+        # hence, edge_attr is now 1 x (2E) not 2 x E
+
+    # Convert edge list to Adj Matrix (Sparsetensor) in CSC format possibly
+    whole_adj = SparseTensor.from_edge_index(edge_index=edge_index, edge_attr=edge_attr, sparse_sizes=(N, N), is_sorted=False)
+    # Convert CSC to CSR format
+    rowptr, col, value = whole_adj.csr()
+    # Create new SparseTensor from CSR format
     whole_adj = SparseTensor(rowptr=rowptr, col=col, value=value, sparse_sizes=(N, N), is_sorted=True, trust_data=True)
     return whole_adj
 
@@ -109,7 +117,7 @@ class NeighborSampler:
         return sampled edges that contain node_idx
         order of edges will change!!
         """
-        node_idx, edge_index, e_id =  sample_k_hop_subgraph(
+        node_idx, edge_index, e_id = sample_k_hop_subgraph(
             node_idx,
             num_hops=1,
             whole_adj=self.whole_adj,
@@ -132,23 +140,27 @@ class NeighborSampler:
         for _ in range(self.num_hops):
             row_start = rowptr[node_idx]
             row_end = rowptr[node_idx + 1]
+
             idx = (torch.rand(node_idx.shape) * (row_end - row_start)).long() + row_start
             node_idx = col[idx]
             mask = row_start < row_end
+
             if direction == "in":
                 mask = mask.logical_and(e_id[idx] < 0)
             elif direction == "out":
                 mask = mask.logical_and(e_id[idx] >= 0)
+
             node_idx = node_idx[mask]
         return node_idx
 
 
+# Inherits from NeighborSampler
 class NeighborSamplerCacheAdj(NeighborSampler):
     def __init__(
         self,
-        cache_path,
+        cache_path, # cache path for adj matrix
         graph, # pyg graph
-        num_hops: int,
+        num_hops: int = 2,
         size: int = 100,
         limit: int = 2000,
     ):
@@ -164,10 +176,12 @@ class NeighborSamplerCacheAdj(NeighborSampler):
             print(f"Preprocessing adjacent matrix for neighbor sampling")
             self.whole_adj = preprocess(graph.edge_index, graph.num_nodes)
             print(f"Saving adjacent matrix for neighbor sampling to {cache_path}")
-            torch.save(self.whole_adj, cache_path)
+
+            torch.save(self.whole_adj, cache_path) # if mag240m_adj_bi.pt does not exist, then it will be created
             print(f"Saved adjacent matrix for neighbor sampling to {cache_path}")
 
-        self.whole_adj.share_memory_()
+        self.whole_adj.share_memory_() # sharing of memory between multiple processes, i.e.,
+        # changes made to the tensor by one process will be immediately visible to all other processes that are accessing the tensor.
 
 
 if __name__ == '__main__':
@@ -186,8 +200,8 @@ if __name__ == '__main__':
     print(graph)
     print(graph.num_nodes)
 
-    nh = 2
-    sampler = NeighborSamplerCacheAdj("test_adj.pt", graph, nh, relabel_nodes=True)
+    num_hops = 2
+    sampler = NeighborSamplerCacheAdj("test_adj.pt", graph, num_hops, relabel_nodes=True)
 
     num_nodes = graph.num_nodes # this is an expensive operation
     for i in trange(10000):

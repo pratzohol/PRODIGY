@@ -10,7 +10,7 @@ sys.path.extend(os.path.join(os.path.dirname(__file__), "../../"))
 def get_params():
     args = argparse.ArgumentParser()
 
-    args.add_argument("-root", "--root", default="./FSdatasets", type=str)
+    args.add_argument("-root", "--root", default="F:/Datasets", type=str)
     args.add_argument("-dataset", "--dataset", default="arxiv", type=str)
     args.add_argument("-invalidate_cache", "--invalidate_cache", default=False, type=bool)
     # if true, it will regenerate preprocessed cache
@@ -22,7 +22,7 @@ def get_params():
     args.add_argument("-force_cache", "--force_cache", default=False, type=bool)  # will use preprocessed cache
     args.add_argument("-cl_only", "--classification_only", default=False, type=bool) # only set this to true when using the very basic arxiv dataset!!! (this is basic node classification where labels are the same in train and test)
     args.add_argument("-esp", "--early_stopping_patience", default=20, type=int) # early stopping patience (in validation epochs, so with default eval_epoch argument 20 * 10 = 200 epochs)
-    args.add_argument("--reset_after_layer", default=None, nargs='+', type=int)
+    args.add_argument("--reset_after_layer", default=None, nargs='+', type=int) # nargs = + means it collects every argument after --reset_after_layer into a list
     args.add_argument("-original_features", "--original_features", default=False, type=bool)
     args.add_argument("-override_log", "--override_log", default=False, type=bool)
 
@@ -64,7 +64,7 @@ def get_params():
     args.add_argument("-skip", "--skip_path", default=False, type=bool)
     args.add_argument("-has_final_back", "--has_final_back", default=False, type=bool)
 
-    args.add_argument("-layers", "--layers", default="S,U,M", type=str)  # default: GraphSAGE->Up->Metagraph (see experiments/layers.py for more info)
+    args.add_argument("-layers", "--layers", default="S2,U,M", type=str)  # default: GraphSAGE->Up->Metagraph (see experiments/layers.py for more info)
     args.add_argument("-ignore_label_embs", "--ignore_label_embeddings", default=True, type=bool)
     args.add_argument("-zero_lbl", "--zero_label_embeddings", default=False, type=bool)
     args.add_argument("-not_freeze_learned_label_embedding", "--not_freeze_learned_label_embedding", default=False, type=bool)
@@ -72,10 +72,9 @@ def get_params():
     args.add_argument("-fdf", "--fix_datasets_first", default=False, type=bool)  # Whether to convert datasets to list first (no sampling involved later).
     # This should generally not be used as the resulting files would be way too large
 
-    args.add_argument("-no_bn_metagraph", "--no_bn_metagraph", default=False,  # no batch norm metagraph
-                      type=bool)
-    args.add_argument("-no_bn_encoder", "--no_bn_encoder", default=False,  # no batch norm on S layers etc.
-                      type=bool)
+    args.add_argument("-no_bn_metagraph", "--no_bn_metagraph", default=False, type=bool) # no batch norm metagraph
+    args.add_argument("-no_bn_encoder", "--no_bn_encoder", default=False, type=bool) # no batch norm on S layers etc.
+
 
     args.add_argument("-calc_ranks", "--calc_ranks", default=False, type=bool)  # Whether to calc MRR and HITS ranks.
     args.add_argument("-eval_only", "--eval_only", default=False, type=bool)  # Eval. only mode (no training, only one pass of testing ds at the beginning and then quit)

@@ -40,7 +40,7 @@ def get_module_list(module_string, emb_dim, edge_attr_dim, input_dim, dropout, r
 
             if is_first_layer:
                 is_first_layer = False
-                in_dim = input_dim  # the first layer takes the input features as input
+                in_dim = input_dim  # the first layer takes the input features as input = 768
 
             module_list.append(
                 get_model(add_to_dim_in=0,

@@ -93,24 +93,14 @@ class SingleLayerGeneralGNN(torch.nn.Module):
 
         x_label = self.initial_label_mlp(x_label)
         if self.params["ignore_label_embeddings"]:
-            #x_label = torch.zeros_like(x_label).float()  # to make sure no language information is passed through the model
+            # x_label = torch.zeros_like(x_label).float()  # to make sure no language information is passed through the model
             # x_label = torch.nn.ReLU()(torch.normal(0, 6,x_label.shape).to(x_label.device))
             x_label = self.learned_label_embedding(torch.arange(x_label.shape[0]).to(x_label.device))
         if self.params["zero_label_embeddings"]:
             x_label = torch.zeros_like(x_label).float()
-        '''
-        # temporary code for debugging
-        bg_gnn = self.layer_list[0]
-        supernode_aggr = self.layer_list[1]
-        meta_gnn = self.layer_list[2]
 
-        node_embs = bg_gnn(graph.x, graph.edge_index, graph.edge_attr)
-        supernode_x = supernode_aggr(node_embs, graph.edge_index_supernode, supernode_idx)
-        x_input, x_label = self.forward_metagraph(meta_gnn, supernode_x, x_label, metagraph_edge_index, metagraph_edge_attr)
-        '''
-        
         x_input = torch.zeros((len(supernode_idx), x_label.size(1))).float().to(x_label.device)
-        #x_input = None
+        # x_input = None
         for module in self.layer_list:
             if isinstance(module, MetagraphLayer):
                 if x_input is None:
@@ -144,12 +134,10 @@ class SingleLayerGeneralGNN(torch.nn.Module):
             else:
                 raise ValueError('Unknown layer type: {}'.format(type(module)))
 
-
         x_input = self.final_input_mlp(x_input)
         x_label = self.final_label_mlp(x_label)
 
-        y_pred_matrix = self.decode(x_input, x_label, metagraph_edge_index, edgelist_bipartite=False).reshape(
-            y_true_matrix.shape)
+        y_pred_matrix = self.decode(x_input, x_label, metagraph_edge_index, edgelist_bipartite=False).reshape(y_true_matrix.shape)
 
         qry_idx = torch.where(query_set_mask.reshape(-1, y_true_matrix.shape[1])[:, 0] == 1)[0]
         return y_true_matrix[qry_idx, :], y_pred_matrix[qry_idx, :], graph

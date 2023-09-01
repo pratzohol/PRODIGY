@@ -95,6 +95,7 @@ class RandomNodeAttr(AugBase):
 def get_aug(aug_spec, node_feature_distribution=None):
     if not aug_spec:
         return Identity()
+
     augs = []
     for spec in aug_spec.split(","):
         if spec.startswith("ND"):

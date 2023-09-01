@@ -21,7 +21,7 @@ def get_dataset_wrap(root, dataset, **kwargs):
         return get_arxiv_dataset(root=os.path.join(root, "arxiv"), **kwargs)
     if dataset == "mag240m":
         from data.mag240m import get_mag240m_dataset
-        return get_mag240m_dataset(root=os.path.join(root, "mag240m"), **kwargs)
+        return get_mag240m_dataset(root=root, **kwargs) # original --> root = os.path.join(root, "mag240m")
     if dataset in ["Wiki", "WikiKG90M"]:
         from data.kg import get_kg_dataset
         return get_kg_dataset(root=root, name=dataset, **kwargs)

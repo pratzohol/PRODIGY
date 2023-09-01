@@ -70,8 +70,6 @@ def custom_attn(self, query, key, value, attention_mask=None, head_mask=None):
 
 # GPT2Attention._attn = custom_attn
 
-
-
 class MetaGNNLayer(MessagePassing):
     """
     GAT gnn for bipartite graph.
@@ -109,11 +107,9 @@ class MetaGNNLayer(MessagePassing):
         out = self.bn(out)
         return out
 
-    def _ff_block(self, x):
-        """Feed Forward block.
-        """
-        x = self.ff_dropout1(F.relu(self.ff_linear1(x)))
-        return self.ff_dropout2(self.ff_linear2(x))
+    # def _ff_block(self, x):
+    #     x = self.ff_dropout1(F.relu(self.ff_linear1(x)))
+    #     return self.ff_dropout2(self.ff_linear2(x))
 
     def message(self, x_j, x_i , edge_attr, index, ptr, size_i):
 
@@ -144,7 +140,7 @@ class MetaGNNLayer(MessagePassing):
 class MetaGATConvLayer(MessagePassing):
     def __init__(self, edge_attr_dim, emb_dim, heads=8, dropout=0, self_loops=True, norm=True):
         super(MetaGATConvLayer, self).__init__()
-        
+
         self.gat = GATv2Conv(in_channels=emb_dim, out_channels=emb_dim, heads=heads, edge_dim=edge_attr_dim, add_self_loops=self_loops)
 
         self.head_proj = torch.nn.Linear(emb_dim * heads, emb_dim)
@@ -152,13 +148,13 @@ class MetaGATConvLayer(MessagePassing):
         # self.label_proj = torch.nn.Linear(emb_dim, emb_dim)
 
         self.mlpf = torch.nn.Sequential(torch.nn.Linear(emb_dim, emb_dim * 2), torch.nn.GELU(), torch.nn.Linear(emb_dim * 2, emb_dim))
-        
+
         self.ln1 = torch.nn.Identity()
         self.ln2 = torch.nn.Identity()
         if norm:
             self.ln1 = torch.nn.LayerNorm(emb_dim)
             self.ln2 = torch.nn.LayerNorm(emb_dim)
-    
+
     def forward(self, x, edge_index, edge_attr=None, start_right=None):
         # Edge projection (commented out bc it doesnt improve)
         # if edge_attr is not None:
@@ -169,7 +165,7 @@ class MetaGATConvLayer(MessagePassing):
         # project X[start_right:] to emb_dim
         # label_emb = self.label_proj(x[start_right:])
         # x = torch.cat([x[:start_right], label_emb], dim=0)
-        
+
         x = x + self.head_proj(self.gat(self.ln1(x), edge_index, edge_attr=edge_attr))
         x = x + self.mlpf(self.ln2(x))
         return x
@@ -177,7 +173,7 @@ class MetaGATConvLayer(MessagePassing):
 class MetaGATConvLayerBi(MessagePassing):
     def __init__(self, edge_attr_dim, emb_dim, heads=8, dropout=0, self_loops=True, norm=True):
         super(MetaGATConvLayerBi, self).__init__()
-        
+
         self.gat_node = GATv2Conv(in_channels=emb_dim, out_channels=emb_dim, heads=heads, edge_dim=edge_attr_dim, add_self_loops=self_loops)
         self.gat_label = GATv2Conv(in_channels=emb_dim, out_channels=emb_dim, heads=heads, edge_dim=edge_attr_dim, add_self_loops=self_loops)
 
@@ -191,7 +187,7 @@ class MetaGATConvLayerBi(MessagePassing):
         if norm:
             self.ln1 = torch.nn.LayerNorm(emb_dim)
             self.ln2 = torch.nn.LayerNorm(emb_dim)
-    
+
     def forward(self, x, edge_index, edge_attr=None, start_right=None):
 
         x = self.ln1(x)
@@ -202,12 +198,12 @@ class MetaGATConvLayerBi(MessagePassing):
         x = x + self.mlpf(self.ln2(x))
 
         return x
-        
+
 
 class MetaAverage(torch.nn.Module, MetagraphLayer):
     def __init__(self, edge_attr_dim, emb_dim, heads = 2, n_layers=1, dropout = 0, aggr="add"):
         super().__init__()
-        
+
     def forward(self, x, edge_index, edge_attr, query_mask, start_right, input_seqs, query_seqs, query_seqs_gt, prev_hidden_states = None, **kwargs):
 
         inputs_ids = input_seqs
@@ -218,7 +214,7 @@ class MetaAverage(torch.nn.Module, MetagraphLayer):
 
         x = torch.cat([x[:start_right], averaged_support[start_right:]], dim = 0)
         return x
- 
+
 
 class MetaGNN(torch.nn.Module, MetagraphLayer):
     def __init__(self, edge_attr_dim, emb_dim, heads = 8, n_layers=1, dropout = 0, aggr="add", has_final_back=False, msg_pos_only = False, self_loops = True, batch_norm = True, gat_layer = False, use_relu=False):
@@ -227,11 +223,12 @@ class MetaGNN(torch.nn.Module, MetagraphLayer):
         self.gnn_layers = torch.nn.ModuleList()
         self.msg_pos_only = msg_pos_only
         self.self_loops = self_loops
-        
+
         if gat_layer:
             self.add_layers_gat(emb_dim, heads, edge_attr_dim, dropout, batch_norm, has_final_back)
         else:
             self.add_layers_original(emb_dim, heads, edge_attr_dim, dropout, batch_norm, has_final_back)
+
         if use_relu:
             self.gnn_non_linear = torch.nn.ReLU()
         else:
@@ -241,7 +238,7 @@ class MetaGNN(torch.nn.Module, MetagraphLayer):
         self.gnn_layers_back = MetaGNNLayer(emb_dim=emb_dim, heads=heads, edge_attr_dim=edge_attr_dim, batch_norm=batch_norm) if has_final_back else None
         for i in range(self.num_gnn_layers):
             self.gnn_layers.append(MetaGNNLayer(emb_dim=emb_dim, heads=heads, edge_attr_dim=edge_attr_dim, dropout=dropout, batch_norm=batch_norm))
-    
+
     def add_layers_gat(self, emb_dim, heads, edge_attr_dim, dropout, batch_norm, has_final_back):
         self.gnn_layers_back = MetaGATConvLayerBi(edge_attr_dim, emb_dim, heads=heads, dropout=dropout, self_loops=self.self_loops, norm=batch_norm) if has_final_back else None
 
@@ -269,16 +266,13 @@ class MetaGNN(torch.nn.Module, MetagraphLayer):
 
         edge_index = torch.cat([edge_index[:, support_mask], edge_index.flip(0)], 1)
         edge_attr =  torch.cat([edge_attr[support_mask], edge_attr], 0)
-        
+
         # add_self_loops:
         if self.self_loops:
             num_nodes = x.size(0)
-            edge_index, edge_attr = remove_self_loops(
-               edge_index, edge_attr)
-            edge_index, edge_attr = add_self_loops(
-               edge_index, edge_attr, fill_value=torch.tensor([0, 0]).to(edge_attr.device),
-               num_nodes=num_nodes)
-        
+            edge_index, edge_attr = remove_self_loops(edge_index, edge_attr)
+            edge_index, edge_attr = add_self_loops(edge_index, edge_attr, fill_value=torch.tensor([0, 0]).to(edge_attr.device), num_nodes=num_nodes)
+
         for i in range(self.num_gnn_layers):
             # hack for heterogeneous graph; should be fixed
             x = self.gnn_layers[i](x, edge_index, edge_attr=edge_attr, start_right=start_right)

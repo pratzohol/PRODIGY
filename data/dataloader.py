@@ -42,11 +42,11 @@ class MultiTaskSplitWay(TaskBase):
     def get_label(self, graph_id):
         raise NotImplementedError
 
-        for task in self.tasks:
-            label = task.get_label(graph_id)
-            if label is not None:
-                return label
-        return None
+        # for task in self.tasks:
+        #     label = task.get_label(graph_id)
+        #     if label is not None:
+        #         return label
+        # return None
 
     def sample(self, num_label, num_member, num_shot, num_query, rng):
         labels = {}
@@ -87,8 +87,8 @@ class MultiTaskSplitBatch(TaskBase):
     def __init__(self, tasks, task_names, task_counts):
         self.tasks = tasks
         self.task_names = task_names
-        self.task_idx = [i for i, c in enumerate(task_counts) for _ in range(c)]
-        random.shuffle(self.task_idx)
+        self.task_idx = [i for i, c in enumerate(task_counts) for _ in range(c)] # [0, 1, 1, 1]
+        random.shuffle(self.task_idx) # Permutation([0, 1, 1, 1]])
         self.task_idx_idx = 0
         self.rng = random.Random()
 
@@ -117,10 +117,11 @@ class MulticlassTask(TaskBase):
         self.label_set = label_set
         self.train_label = train_label
         self.linear_probe = linear_probe
-        self.label2idx = {label: np.where(labels == label)[0] for label in label_set}
+        self.label2idx = {label: np.where(labels == label)[0] for label in label_set} # {label : array([])}
+
         if train_label is not None:
             self.train_label2idx = {label: np.where(train_label == label)[0] for label in label_set}
-            print(self.train_label2idx )
+            print(self.train_label2idx)
 
 
     def get_label(self, graph_id):
@@ -170,8 +171,10 @@ class ContrastiveTask(TaskBase):
         task = {}
         while len(task) < num_label:
             center = rng.randrange(self.size)
+
             if center in task:
                 continue
+
             node_idx = torch.ones(num_member, dtype=torch.long) * center
             task[center] = node_idx.tolist()
 
@@ -190,11 +193,14 @@ class NeighborTask(TaskBase):
         task = {}
         while len(task) < num_label:
             center = rng.randrange(self.size)
+
             if center in task:
                 continue
+
             node_idx = torch.ones(num_member * 10, dtype=torch.long) * center
             node_idx = self.neighbor_sampler.random_walk(node_idx, self.direction)
             node_idx = torch.unique(node_idx)
+
             if node_idx.size(0) >= num_member:
                 task[center] = node_idx[:num_member].tolist()
 
@@ -230,6 +236,9 @@ class KGNeighborTask(TaskBase):
 
         return task
 
+
+# automatic generation of '__init__' and '__repr__' functions
+# e.g. directly access by calling self.batch_size or self.n_way (no need to explicitly declare in init method)
 @dataclass
 class BatchParam:
     batch_size: int
@@ -256,13 +265,13 @@ class ParamSampler:
             return rng.choice(dist)
 
     def __call__(self, rng):
-        batch_size = self.sample_param(self.batch_size, rng)
+        batch_size = self.sample_param(self.batch_size, rng) # choose a batch size from a list
 
-        n_way = self.sample_param(self.n_way, rng)
-        n_shot = self.sample_param(self.n_shot, rng)
-        n_query = self.sample_param(self.n_query, rng)
-        n_aug = self.sample_param(self.n_aug, rng)
-        n_member = (n_shot + n_query) // n_aug
+        n_way = self.sample_param(self.n_way, rng) # choose a num ways from a list
+        n_shot = self.sample_param(self.n_shot, rng) # choose a num shots from a list
+        n_query = self.sample_param(self.n_query, rng) # choose a num queries from a list
+        n_aug = self.sample_param(self.n_aug, rng) # choose a num aug from a list
+        n_member = (n_shot + n_query) // n_aug # number of members per task
 
         return BatchParam(
             batch_size=batch_size,
@@ -354,6 +363,7 @@ class Collator:
         b_mask = torch.stack(query_mask)
         query_mask = torch.cat(query_mask)
         label_map = list(chain(*label_map))
+
         if self.is_multiway:
             metagraph_edge_source = torch.arange(labels.size(0)).repeat_interleave(num_labels)
             metagraph_edge_target = torch.arange(num_labels).repeat(labels.size(0))

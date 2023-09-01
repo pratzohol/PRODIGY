@@ -4,7 +4,7 @@ import os
 rel_path = "./arxiv_CS_categories.txt"
 
 
-f = open(os.path.join(os.path.dirname(__file__), rel_path), "r").readlines() # get the pwd() and append rel_path. Then open the file and read the lines
+f = open(os.path.join(os.path.dirname(__file__), rel_path), "r").readlines() # get the pwd() and append rel_path
 
 state = 0
 result = {

@@ -5,6 +5,7 @@ import torch
 import torch_geometric as pyg
 from torch_geometric.nn import MessagePassing, GATConv, GATv2Conv
 from torch_geometric.utils import add_self_loops
+from torch_scatter import scatter, scatter_sum
 from models.layer_classes import BackgroundGNNLayer, MetagraphLayer
 
 def obtain_supernode_embeddings(all_node_emb, supernode_edge_index, supernode_idx, aggr='mean'):
@@ -16,9 +17,8 @@ def obtain_supernode_embeddings(all_node_emb, supernode_edge_index, supernode_id
     :param aggr:
     :return:
     '''
-    return scatter(src=all_node_emb[supernode_edge_index[0]], index=supernode_edge_index[1], dim=0, reduce=aggr)[
-           supernode_idx, :]
-    
+    return scatter(src=all_node_emb[supernode_edge_index[0]], index=supernode_edge_index[1], dim=0, reduce=aggr)[supernode_idx, :]
+
 class NoMessagePassing(torch.nn.Module):
     """
     MLP only on the node features - no message passing
@@ -143,18 +143,20 @@ class SAGEConvSelfLoops(MessagePassing):
 
     def __init__(self, x_dim, edge_attr_dim, emb_dim, dropout = 0, aggr="add", transform_x=True, batch_norm=True):
         super(SAGEConvSelfLoops, self).__init__()
+
         # multi-layer perceptron
         self.transform_x = transform_x
         self.lin_x = torch.nn.Linear(x_dim, emb_dim)
         if transform_x:
             self.lin_self_loops = torch.nn.Linear(x_dim, emb_dim)
+
         if edge_attr_dim is None:
             #  do not use edge_attr
             self.lin_edge_attr = None
         else:
             self.lin_edge_attr = torch.nn.Linear(edge_attr_dim, emb_dim)
-        self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2 * emb_dim), torch.nn.ReLU(),
-                                       torch.nn.Linear(2 * emb_dim, emb_dim))
+
+        self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2 * emb_dim), torch.nn.ReLU(), torch.nn.Linear(2 * emb_dim, emb_dim))
         self.aggr = aggr
 
         self.dropout = torch.nn.Dropout(dropout)
@@ -163,15 +165,16 @@ class SAGEConvSelfLoops(MessagePassing):
             self.bn = torch.nn.BatchNorm1d(emb_dim)
 
     def forward(self, x, edge_index, edge_attr=None):
-        x_transformed = self.lin_x(x)
+        x_transformed = self.lin_x(x) # x_tranformed has 256-dim embedding
         if self.lin_edge_attr is None:
-            x_msg = self.propagate(aggr=self.aggr, edge_index=edge_index, x=x_transformed)
+            x_msg = self.propagate(aggr=self.aggr, edge_index=edge_index, x=x_transformed) # self.aggr = mean
         else:
             edge_attr_emb = self.lin_edge_attr(edge_attr)
             x_msg = self.propagate(aggr=self.aggr, edge_index=edge_index, x=x_transformed, edge_attr=edge_attr_emb)
+
         if self.transform_x:
-            x_msg += self.lin_self_loops(x)
-        
+            x_msg += self.lin_self_loops(x) # add self-loop after converting embedding to 256-dim
+
         if x.shape[1] == x_msg.shape[1]:
             x_msg = self.dropout(x_msg) + x
         x_msg = self.bn(x_msg)

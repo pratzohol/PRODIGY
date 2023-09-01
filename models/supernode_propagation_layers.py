@@ -94,8 +94,7 @@ class BgGraphToSupernodePropagator(torch.nn.Module, SupernodeAggrLayer):
         :param supernode_idx: Idx of the supernodes in the graph
         :return:
         '''
-        return scatter(src=all_node_emb[supernode_edge_index[0]], index=supernode_edge_index[1], dim=0, reduce=self.aggr)[
-               supernode_idx, :]
+        return scatter(src=all_node_emb[supernode_edge_index[0]], index=supernode_edge_index[1], dim=0, reduce=self.aggr)[supernode_idx, :]
 
 
 class BgGraphToSupernodePropagatorPool(torch.nn.Module, SupernodeAggrLayer):

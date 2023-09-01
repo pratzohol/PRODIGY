@@ -17,10 +17,10 @@ class MultiLayerGNN(torch.nn.Module, BackgroundGNNLayer):
         self.supernode_gnn = supernode_gnn
         self.act = torch.nn.ReLU()
         self.reset_after_layer = reset_after_layer
+
         self.reset_mlp = torch.nn.Linear(2*emb_dim, emb_dim)
         self.reset_mlp_c = torch.nn.Linear(emb_dim, emb_dim)
         self.reset_mlp_m = torch.nn.Linear(emb_dim, emb_dim)
-
 
 
     def forward(self, x_orig, x, edge_index, edge_attr, supernode_edge_index=None, center_node_index = None, batch = None):
