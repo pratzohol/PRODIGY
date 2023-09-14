@@ -379,7 +379,6 @@ class MetaTransformerPytorch(torch.nn.Module, MetagraphLayer):
         :param edge_attr: Edge attributes for the bipartite graph.
         :return:
         '''
-        #TODO: label can come from prev_hidden_states if prev_hidden_states is not None
         x = torch.cat([x, self.masked_token_emb.to(x.device), self.false_token_emb.to(x.device) ], 0)
         inputs_ids = torch.cat([input_seqs, query_seqs], dim = 1)
         inputs_embeds = x[inputs_ids]
@@ -453,7 +452,6 @@ class MetaTransformer(torch.nn.Module, MetagraphLayer):
         :return:
         '''
 
-        #TODO: label can come from prev_hidden_states if prev_hidden_states is not None
         x = torch.cat([x, self.masked_token_emb.to(x.device) ], 0)
         inputs_ids = torch.cat([input_seqs, query_seqs], dim = 1)
         inputs_embeds = x[inputs_ids]

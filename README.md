@@ -1,4 +1,4 @@
-# PRODIGY-scaled
+# PRODIGY
 
 - This repo contains code accompanying the paper, [PRODIGY: Enabling In-context Learning Over Graphs](https://arxiv.org/abs/2305.12600).
 - I have covered the explanation of this paper here --> [How does PRODIGY work?](https://pratzohol.github.io/MindML/Notes/Graph_Neural_Networks/icl-over-graphs-PRODIGY/).
