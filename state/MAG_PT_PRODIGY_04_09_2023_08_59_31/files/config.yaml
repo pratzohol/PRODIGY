@@ -1,0 +1,128 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    python_version: 3.10.6
+    cli_version: 0.15.9
+    framework: huggingface
+    huggingface_version: 4.32.1
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1693798380.032889
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      - 49
+      - 53
+      - 55
+      - 75
+      - 77
+      2:
+      - 1
+      - 5
+      - 11
+      - 49
+      - 53
+      - 55
+      - 75
+      - 77
+      3:
+      - 1
+      - 2
+      - 13
+      - 19
+      - 23
+      4: 3.10.6
+      5: 0.15.9
+      6: 4.32.1
+      8:
+      - 5
+trainer_fs:
+  desc: null
+  value: true
+params:
+  desc: null
+  value:
+    root: /home/prateek/Datasets
+    dataset: mag240m
+    invalidate_cache: false
+    dataset_len_cap: 50010
+    val_len_cap: 100
+    test_len_cap: 100
+    shuffle_index: false
+    force_cache: false
+    classification_only: false
+    early_stopping_patience: 20
+    reset_after_layer: null
+    original_features: true
+    override_log: false
+    seed: null
+    metric: Acc
+    learning_rate: 0.0003
+    epochs: 1
+    print_epoch: 10
+    eval_epoch: 10
+    checkpoint_epoch: 10
+    print_step: 2000
+    eval_step: 1000
+    checkpoint_step: 1000
+    batch_size: 1
+    weight_decay: 0.001
+    dropout: 0
+    text_features_dropout: 0
+    rel_sample_random_seed: null
+    split_train_nodes: false
+    verbose: false
+    workers: 10
+    device: cuda:0
+    input_dim: 768
+    emb_dim: 256
+    gnn_type: sage
+    n_layer: 1
+    meta_n_layer: 1
+    second_gnn: Atten
+    attention_mask_scheme: causal
+    skip_path: false
+    has_final_back: false
+    layers: S2,U,M
+    ignore_label_embeddings: true
+    zero_label_embeddings: false
+    not_freeze_learned_label_embedding: false
+    linear_probe: false
+    fix_datasets_first: false
+    no_bn_metagraph: false
+    no_bn_encoder: false
+    calc_ranks: false
+    eval_only: false
+    meta_gnn_pos_only: false
+    task_name: cls_nm_sb
+    zero_shot: false
+    no_split_labels: true
+    all_test: false
+    train_cap: null
+    label_set: null
+    csr_split: false
+    n_way: 30
+    n_shots: 3
+    n_query: 4
+    n_way_upper: -1
+    n_shots_upper: -1
+    n_query_upper: -1
+    max_length: -1
+    augmentation: ND0.5,NZ0.5
+    augment_test: true
+    attr_regression_weight: 1000.0
+    prefix: MAG_PT_PRODIGY
+    timestamp: 04_09_2023_08_59_31
+    log_dir: log
+    state_dir: state
+    bert_emb_model: multi-qa-distilbert-cos-v1
+    bert_cache: multi-qa-distilbert-cos-v1
+    kg_emb_model: ''
+    pretrained_model_run: ''
+    small_dataset: false
+    experiment_type: metagraph
+    exp_name: MAG_PT_PRODIGY_04_09_2023_08_59_31

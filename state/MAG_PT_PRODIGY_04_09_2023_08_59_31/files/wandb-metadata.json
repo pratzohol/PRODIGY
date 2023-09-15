@@ -1,0 +1,296 @@
+{
+    "os": "Linux-5.19.0-42-generic-x86_64-with-glibc2.35",
+    "python": "3.10.6",
+    "heartbeatAt": "2023-09-04T03:33:01.026042",
+    "startedAt": "2023-09-04T03:33:00.010177",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--dataset",
+        "mag240m",
+        "--root",
+        "/home/prateek/Datasets",
+        "--original_features",
+        "True",
+        "-ds_cap",
+        "50010",
+        "-val_cap",
+        "100",
+        "-test_cap",
+        "100",
+        "--epochs",
+        "1",
+        "-ckpt_step",
+        "1000",
+        "-layers",
+        "S2,U,M",
+        "-lr",
+        "3e-4",
+        "-way",
+        "30",
+        "-shot",
+        "3",
+        "-qry",
+        "4",
+        "-eval_step",
+        "1000",
+        "-task",
+        "cls_nm_sb",
+        "-bs",
+        "1",
+        "-aug",
+        "ND0.5,NZ0.5",
+        "-aug_test",
+        "True",
+        "-attr",
+        "1000",
+        "--device",
+        "0",
+        "--prefix",
+        "MAG_PT_PRODIGY"
+    ],
+    "state": "running",
+    "program": "/home/prateek/prodigy/experiments/run_single_experiment.py",
+    "codePath": "experiments/run_single_experiment.py",
+    "git": {
+        "remote": "https://github.com/snap-stanford/prodigy.git",
+        "commit": "107ba57234d3188227cda5b78a2dbcfb84a1c694"
+    },
+    "email": null,
+    "root": "/home/prateek/prodigy",
+    "host": "LCS2-IITD",
+    "username": "prateek",
+    "executable": "/home/prateek/miniconda3/envs/torch_pyg_dgl/bin/python",
+    "cpu_count": 20,
+    "cpu_count_logical": 40,
+    "cpu_freq": {
+        "current": 1761.5706750000002,
+        "min": 1000.0,
+        "max": 3200.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2932.51,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2591.666,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1344.361,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.004,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2932.505,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1463.84,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1999.994,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2072.26,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2899.989,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2106.369,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2899.999,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2800.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1988.717,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2971.568,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 999.891,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.137,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2112.914,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 999.693,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 3200.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 3200.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2202.063,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2000.487,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1200.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2199.868,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2895.379,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 3200.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 3200.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 2099.038,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1998.824,
+            "min": 1000.0,
+            "max": 3200.0
+        },
+        {
+            "current": 1000.0,
+            "min": 1000.0,
+            "max": 3200.0
+        }
+    ],
+    "disk": {
+        "total": 914.6905212402344,
+        "used": 26.56942367553711
+    },
+    "gpu": "A100 80GB PCIe",
+    "gpu_count": 3,
+    "gpu_devices": [
+        {
+            "name": "A100 80GB PCIe",
+            "memory_total": 85199093760
+        },
+        {
+            "name": "A100 80GB PCIe",
+            "memory_total": 85199093760
+        },
+        {
+            "name": "A100 80GB PCIe",
+            "memory_total": 85199093760
+        }
+    ],
+    "memory": {
+        "total": 503.5594062805176
+    }
+}
