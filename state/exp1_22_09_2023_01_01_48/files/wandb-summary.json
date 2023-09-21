@@ -1,0 +1,1 @@
+{"wandb_url": "https://wandb.ai/pratzohol/graph-clip/runs/a0j5p6no", "num_params": 2035522, "start_test_acc": 0.7330666666666666, "start_test_acc_std": 0.07676115272650115, "_timestamp": 1695325245.1068878, "_runtime": 38.401649713516235, "_step": 0, "_wandb": {"runtime": 37}}
