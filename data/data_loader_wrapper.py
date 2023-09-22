@@ -18,7 +18,7 @@ def get_dataset_wrap(root, dataset, **kwargs):
     #  rel_sample_rand_seed: If not None, this is the seed used to sample relations for the KG datasets.
     if dataset == "arxiv":
         from data.arxiv import get_arxiv_dataset
-        return get_arxiv_dataset(root=os.path.join(root, "arxiv"), **kwargs)
+        return get_arxiv_dataset(root=root, **kwargs) # original --> root = os.path.join(root, "arxiv")
     if dataset == "mag240m":
         from data.mag240m import get_mag240m_dataset
         return get_mag240m_dataset(root=root, **kwargs) # original --> root = os.path.join(root, "mag240m")

@@ -18,5 +18,23 @@
         "titleBar.inactiveBackground": "#19002999",
         "titleBar.inactiveForeground": "#e7e7e799"
     },
-    "peacock.color": "#190029"
+    "peacock.color": "#190029",
+    "python.linting.enabled": false,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true,
+        ".vscode": true,
+        "data/__pycache__": true,
+        "experiments/__pycache__": true,
+        "models/__pycache__": true
+    },
+    "explorerExclude.backup": {}
 }
